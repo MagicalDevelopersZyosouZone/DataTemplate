@@ -16,6 +16,11 @@
     <IncludeDebugInformation>false</IncludeDebugInformation>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="index.php" />
+    <Folder Include="lib\" />
+    <Folder Include="dev\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="dev\test.html" />
+    <Content Include="lib\HTMLTemplate.js" />
   </ItemGroup>
 </Project>
