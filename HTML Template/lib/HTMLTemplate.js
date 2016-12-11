@@ -69,6 +69,8 @@
                     {
                         for (var i = 0; i < value.length; i++)
                         {
+                            if (!value[i])
+                                continue;
                             templateDOM.present.appendChild(RenderTemplate(templateDOM, value[i]));
                         }
                     }
