@@ -144,7 +144,7 @@
             html = html.replace("{" + key + "}", obj[key]);
         }
         var div = document.createElement("div");
-        div.className = "HTMLTemplateNode";
+        div.className = "HTMLTemplateNode "+template.className;
         div.innerHTML = html;
         return div;
     }
