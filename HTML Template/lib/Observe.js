@@ -90,3 +90,32 @@ function ObservableList() {
 };
 ObservableList.prototype = Object.create(SimpleEventTarget.prototype);
 ObservableList.prototype.constructor = ObservableList;
+
+function ObservableObject(obj) {
+    SimpleEventTarget.call(this);
+
+    var closureThis = this;
+
+    function setProp(prop) {
+        if (typeof (prop) != "function") {
+            var field = obj[prop];
+            Object.defineProperty(closureThis, prop, {
+                get: function () {
+                    return field;
+                },
+                set: function (val) {
+                    field = val;
+                    closureThis.callEvent();
+                }
+            });
+        } else {
+            closureThis[prop] = obj[prop];
+        }
+    }
+
+    for (var prop in obj) {
+        setProp(prop);
+    }
+}
+ObservableObject.prototype = Object.create(SimpleEventTarget.prototype);
+ObservableObject.prototype.constructor = ObservableObject;
