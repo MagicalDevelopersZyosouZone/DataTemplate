@@ -28,6 +28,11 @@ function ObservableList() {
             return _items;
         }
     });
+    Object.defineProperty(this, "length", {
+        get: function () {
+            return _items.length;
+        }
+    });
 
     function itemPropertyChange() {
         closureThis.callEvent();
