@@ -1,8 +1,9 @@
 // TODO: import library
 
 var l = new ObservableList();
-l.listen(function () {
+l.listen(function (e) {
     console.log(l.internalArray);
+    console.log(e);
 });
 var o = new ObservableObject({
     name: "Mitsuha",

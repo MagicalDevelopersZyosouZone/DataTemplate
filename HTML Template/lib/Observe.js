@@ -1,17 +1,22 @@
 function SimpleEventTarget() {
-    var _listeners = new Map();
+    var _listeners = new Array();
     var _listenerCount = 0;
     this.callEvent = function () {
-        _listeners.forEach(function (value) {
-            value();
-        });
+        for (var i = 0; i < _listeners.length; i++) {
+            if (!_listeners[i].removed) {
+                _listeners[i].callback.apply(null, arguments);
+            }
+        }
     };
     this.listen = function (callback) {
-        _listeners.set(_listenerCount, callback);
+        _listeners.push({
+            removed: false,
+            callback: callback
+        });
         return _listenerCount++;
     };
     this.unlisten = function (id) {
-        _listeners.delete(id);
+        _listeners[id].removed = true;
     };
 }
 
@@ -34,8 +39,8 @@ function ObservableList() {
         }
     });
 
-    function itemPropertyChange() {
-        closureThis.callEvent();
+    function itemPropertyChange(args) {
+        closureThis.callEvent(args);
     }
 
     function listenObject(obj) {
@@ -71,6 +76,14 @@ function ObservableList() {
         this.setIndexer();
         this.callEvent();
     };
+    this.indexOf = function (obj) {
+        for (var i = 0; i < _items.length; i++) {
+            if (obj === _items[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
     this.add = function (item) {
         listenObject(item);
@@ -109,8 +122,13 @@ function ObservableObject(obj) {
                     return field;
                 },
                 set: function (val) {
+                    var oldValue = field;
                     field = val;
-                    closureThis.callEvent();
+                    closureThis.callEvent({
+                        key: prop.toString(),
+                        oldValue: oldValue,
+                        newValue: val
+                    });
                 }
             });
         } else {
