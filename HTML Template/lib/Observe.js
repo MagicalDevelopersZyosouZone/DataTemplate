@@ -125,6 +125,7 @@ function ObservableObject(obj) {
                     var oldValue = field;
                     field = val;
                     closureThis.callEvent({
+                        object: closureThis,
                         key: prop.toString(),
                         oldValue: oldValue,
                         newValue: val
