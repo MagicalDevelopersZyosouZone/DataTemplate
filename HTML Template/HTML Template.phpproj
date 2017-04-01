@@ -18,10 +18,15 @@
   <ItemGroup>
     <Folder Include="lib\" />
     <Folder Include="dev\" />
+    <Folder Include="test\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="dev\jquery.min.js" />
     <Content Include="dev\test.html" />
     <Content Include="lib\HTMLTemplate.js" />
+    <Content Include="lib\Observe.js" />
+    <Content Include="test\jquery.min.js" />
+    <Content Include="test\ObservableItem.js" />
+    <Content Include="test\test.html" />
   </ItemGroup>
 </Project>
