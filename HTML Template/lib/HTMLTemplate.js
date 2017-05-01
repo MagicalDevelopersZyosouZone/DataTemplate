@@ -4,258 +4,468 @@
     {
 
     };
-    var globalTemplates = (function ()
+    //ArrayList
+    function ArrayList()
     {
         var list = [];
-        list.add = function (template)
+        list.add = function (obj)
         {
-            this[this.length] = template;
-            return this.length - 1;
-        }
-        list.remove = function (template)
-        {
-            var index = this.indexOf(template);
-            if (index < 0)
-                return;
-            for (var i = index ; i < this.length - 1 ; i++)
+            if (obj instanceof Array)
             {
-                if (i < 0)
-                    return;
-                this[i] = this[i] + 1;
+                for (var i = 0; i < obj.length; i++)
+                {
+                    list[list.length] = obj[i];
+                }
+                return list.length - 1;
             }
-            this.length--;
-            return index;
+            else
+            {
+                list[list.length] = obj;
+                return list.length - 1;
+            }
+        }
+        list.insert = function (obj, index)
+        {
+            if (isNaN(index) || index < 0)
+            {
+                throw new Error("Invalid index.");
+            }
+            for (var i = this.length-1; i >=index; i--)
+            {
+                this[i + 1] = this[i];
+            }
+            this[index] = obj;
         }
         list.removeAt = function (index)
         {
-            if (index < 0)
-                return;
-            var obj = this[index];
-            for (var i = index ; i < this.length - 1 ; i++)
+            if (isNaN(index) || index < 0 || index >= list.length)
             {
-                if (i < 0)
-                    return;
-                this[i] = this[i] + 1;
+                throw new Error("Invalid index.");
             }
-            this.length--;
-            return obj;
+            for (var i = index; i < list.length - 1; i++)
+            {
+                list[i] = list[i + 1];
+            }
+            list.length -= 1;
+        }
+        list.remove = function (obj)
+        {
+            for (var i = 0; i < list.length; i++)
+            {
+                if (list[i] == obj)
+                {
+                    for (; i < list.length - 1; i++)
+                    {
+                        list[i] = list[i + 1];
+                    }
+                    list.length -= 1;
+                    return;
+                }
+            }
+            throw new Error("Object not found.");
+        }
+        list.clear = function ()
+        {
+            list.length = 0;
+        }
+        list.addRange = function (arr, startIndex, count)
+        {
+            if (!startIndex || isNaN(startIndex))
+                startIndex = 0;
+            if (!count || isNaN(count))
+                count = arr.length;
+            for (var i = startIndex; i < count; i++)
+            {
+                list[list.length] = arr[i];
+            }
+        }
+        list.contain = function (obj)
+        {
+            return (list.indexOf(obj) >= 0);
         }
         return list;
-    })();
-    function Template(dom)
+    }
+    
+    var globalTemplates = ArrayList();
+    function Template(templateNode)
     {
-        this.dom = dom;
-        this.attr = [];
-        this.children = [];
+        this.templateNode = templateNode;
+        this.attr = ArrayList();
+        this.children = ArrayList();
         this.dataSouceBinding = null;
-        this.present = document.createElement("div");
-        this.present.className = "HTMLTemplatePresentation";
-        this.present.id = dom.id;
-        this.present.template = this;
+        this.templateNode=templateNode;
 
         var dataSource = null;
 
         var template = this;
-        Object.defineProperty(this, "dataSource", {
+        Object.defineProperty(templateNode, "dataSource", {
             get: function ()
             {
                 return dataSource;
             },
             set: function (value)
             {
+                
                 dataSource = value;
-                template.render(template.present, value);
+                template.render(value,template.templateNode);
             }
         });
-        Object.defineProperty(this.present, "dataSource", {
-            get: function ()
-            {
-                return dataSource;
-            },
-            set: function (value)
-            {
-                dataSource = value;
-                template.render(template.present, value);
-            }
-        });
-        
-        for (var i = 0; i <dom.attributes &&  dom.attributes.length; i++)
+        var tNode=document.createElement("div");
+        tNode.innerHTML=templateNode.innerHTML;
+        //alert(templateNode.childNodes.length)
+        //alert(tNode.childNodes.length);
+        for (var i = 0; i<templateNode.attributes.length; i++)
         {
-            if (dom.attributes[i].name == "datasource")
+            if (templateNode.attributes[i].name == "datasource")
             {
-                this.dataSouceBinding = dom.attributes[i].value;
+                this.dataSouceBinding = new Binding(templateNode.attributes[i].value).bind;
             }
             else
             {
-                this.attr[this.attr.length] = new AttributeTemplate(dom.attributes[i]);
+                this.attr.add(new AttributeTemplate(templateNode.attributes[i]));
             }
         }
-        for (var i = 0; i < dom.childNodes.length; i++)
+        //alert(templateNode.childNodes.length+"\r\n"+templateNode.innerHTML);
+        
+        
+        for (var i = 0; i < tNode.childNodes.length; i++)
         {
-            var child = dom.childNodes[i];
+            //alert(tNode.childNodes.length);
+            var child = tNode.childNodes[i];
             if (child.nodeName == "#text")
             {
-                this.children[this.children.length] = new TextTemplate(child.wholeText);
+                this.children.add(new NodeTemplate(child.wholeText));
             }
             else if (child.nodeName == "TEMPLATE")
             {
-                this.children[this.children.length] = new Template(child);
+                this.children.add(new Template(child));
             }
             else
             {
-                this.children[this.children.length] = new NodeTemplate(child);
+                this.children.add(new NodeTemplate(child));
             }
         }
-        dom.parentNode.replaceChild(this.present, dom);
+        templateNode.innerHTML = "";
+
+        templateNode.present = function (items)
+        {
+            if (!(items instanceof Array))
+                items = [items];
+            templateNode.clear();
+            templateNode.items = items;
+            var referNode = templateNode.nextSibling;
+            for (var i = 0; i < items.length; i++)
+            {
+                for (var j = 0; j < items[i].nodes.length; j++)
+                {
+                    var node = items[i].nodes[j];
+                    templateNode.parentNode.insertBefore(node, referNode);
+                }
+            }
+        }
+        templateNode.addItem = function (item)
+        {
+            var referNode = null;
+            if (templateNode.items && templateNode.items.length > 0)
+            {
+                referNode = templateNode.items[templateNode.items.length - 1].last.nextSibling;
+            }
+            else
+                referNode = templateNode.nextSibling;
+            if (item instanceof TemplateItem)
+                item = [item];
+            for (var i = 0; i < item.length; i++)
+            {
+                for (var j = 0; j < item[i].nodes.length; j++)
+                {
+                    templateNode.parentNode.insertBefore(item[i].nodes[j], referNode);
+                }
+            }
+        }
+        templateNode.insertItem = function (item, index)
+        {
+            var referNode = templateNode.nextSibling;
+            if (templateNode.items && templateNode.items.length > 0)
+            {
+                if (index >= templateNode.items.length)
+                    referNode = templateNode.items[templateNode.items.length - 1].last.nextSibling;
+                else
+                    referNode = templateNode.items[index].first;
+            }
+            if (item instanceof TemplateItem)
+                item = [item];
+            for (var i = 0; i < item.length; i++)
+            {
+                for (var j = 0; j < item[i].nodes.length; j++)
+                {
+                    templateNode.parentNode.insertBefore(item[i].nodes[j], referNode);
+                }
+            }
+        }
+        templateNode.removeItem = function (index)
+        {
+            if (templateNode.items[index])
+            {
+                for (var i = 0; i < templateNode.items[index].nodes.length; i++)
+                {
+                    var item = templateNode.items[index].nodes[i];
+                    item.parentNode.removeChild(item);
+                }
+                templateNode.items.removeAt(index);
+            }
+        }
+        templateNode.clear = function ()
+        {
+            if (!templateNode.items || !templateNode.parentNode)
+                return;
+            for (var i = 0; i < items.length; i++)
+            {
+                for (var j = 0; j < items.nodes.length; j++)
+                {
+                    templateNode.parentNode.removeChild(items[i].nodes[j]);
+                }
+            }
+        }
+        //templateNode.parentNode.replaceChild(this.present, templateNode);
     }
-    Template.prototype.render = function (presentNode,source)
+    Template.prototype.render = function (source,templateNode)
     {
-        presentNode.innerHTML = "";
-        if (source instanceof Array)
+        /*if(templateNode)
         {
-            for (var idx = 0; idx < source.length; idx++)
+            for(var i=0;templateNode.items && i<templateNode.items.length;i++)
             {
-                var node = document.createElement("div");
-                for (var i = 0; i < this.attr.length; i++)
-                {
-                    node.setAttributeNode(this.attr[i].render(source[idx]));
-                }
-                node.classList.add("HTMLTemplateNode");
-                for (var i = 0; i < this.children.length; i++)
-                {
-                    if (this.children[i] instanceof Template)
-                    {
-                        var present = document.createElement("div");
-                        for (var j = 0; j < this.children[i].attr.length; j++)
-                        {
-                            present.setAttributeNode(this.children[i].attr[j].render(source[idx]));
-                        }
-                        present.className = "HTMLTemplatePresentation";
-                        node.appendChild(present);
-                        if (!this.children[i].dataSouceBinding)
-                            continue;
-                        var src = eval("source." + this.children[i].dataSouceBinding);
-                        this.children[i].render(present, src);
-                    }
-                    else if (this.children[i] instanceof TextTemplate)
-                    {
-                        var textNode = document.createTextNode(this.children[i].render(source[idx]));
-                        node.appendChild(textNode);
-                    }
-                    else
-                    {
-                        node.appendChild(this.children[i].render(source[idx]));
-                    }
-                }
-                this.present.appendChild(node);
+                templateNode.items[i].removeAll();
             }
-        }
-        else if (window.ObservableList && source instanceof ObservableList)
+            templateNode.items=ArrayList();
+            var referNode=templateNode.nextSibling;
+        
+        }*/
+        //presentNode.innerHTML = "";
+        var items=ArrayList();
+        if ((source instanceof Array)||(source instanceof ObserveList))
         {
             for (var idx = 0; idx < source.length; idx++)
             {
-                var node = document.createElement("div");
-                for (var i = 0; i < this.attr.length; i++)
-                {
-                    node.setAttributeNode(this.attr[i].render(source[idx]));
-                }
-                node.classList.add("HTMLTemplateNode");
+                    
+                items.add(new TemplateItem());
                 for (var i = 0; i < this.children.length; i++)
                 {
                     if (this.children[i] instanceof Template)
                     {
-                        var present = document.createElement("div");
-                        for (var j = 0; j < this.children[i].attr.length; j++)
-                        {
-                            present.setAttributeNode(this.children[i].attr[j].render(source[idx]));
-                        }
-                        present.className = "HTMLTemplatePresentation";
-                        node.appendChild(present);
+                        var tmpNode=this.children[i].renderTemplateNode(source[idx]);
+                        //templateNode.parentNode.insertBefore(tmpNode,referNode);
+                        items[idx].add(tmpNode);
                         if (!this.children[i].dataSouceBinding)
                             continue;
-                        var src = eval("source." + this.children[i].dataSouceBinding);
-                        this.children[i].render(present, src);
-                    }
-                    else if (this.children[i] instanceof TextTemplate)
-                    {
-                        var textNode = document.createTextNode(this.children[i].render(source[idx]));
-                        node.appendChild(textNode);
+                        var src = eval("source[idx]." + this.children[i].dataSouceBinding);
+                        var rendered=this.children[i].render(src);
+                        for(var j=0;j<rendered.length;j++)
+                        {
+                            items[idx].add(rendered[j].nodes);
+                        }
+                        
                     }
                     else
                     {
-                        node.appendChild(this.children[i].render(source[idx]));
+                        var node=this.children[i].render(source[idx]);
+                        //templateNode.parentNode.insertBefore(node,referNode);
+                        items[idx].add(node);
                     }
                 }
-                this.present.appendChild(node);
+            }
+            if(source instanceof ObserveList)
+            {
+                function onInsert(e)
+                {
+                    var idx=e.index;
+                    
+                }
+                function onRemove(e)
+                {
+
+                }
             }
         }
         else 
         {
-            var node = document.createElement("div");
-            for (var i = 0; i < this.attr.length; i++)
-            {
-                node.setAttributeNode(this.attr[i].render(source));
-            }
-            node.classList.add("HTMLTemplateNode");
+            items.add(new TemplateItem());
             for (var i = 0; i < this.children.length; i++)
             {
                 if (this.children[i] instanceof Template)
                 {
-                    var present = document.createElement("div");
-                    for (var j = 0; j < this.children[i].attr.length; j++)
-                    {
-                        present.setAttributeNode(this.children[i].attr[j].render(source));
-                    }
-                    present.className = "HTMLTemplatePresentation";
-                    node.appendChild(present);
-                    if (!this.children[i].dataSouceBinding)
+                    var tmpNode=this.children[i].renderTemplateNode(source);
+                    items[0].add(tmpNode);
+                    if(!this.children[i].dataSouceBinding)
                         continue;
                     var src = eval("source." + this.children[i].dataSouceBinding);
-                    this.children[i].render(present, src);
-                }
-                else if (this.children[i] instanceof TextTemplate)
-                {
-                    var textNode = document.createTextNode(this.children[i].render(source));
-                    node.appendChild(textNode);
+                    var rendered=this.children[i].render(src);
+                    for(var j=0;j<rendered.length;j++)
+                    {
+                        items[0].add(rendered[j].nodes);
+                    }
+                    
                 }
                 else
                 {
-                    node.appendChild(this.children[i].render(source));
+                    var node=this.children[i].render(source);
+                    //templateNode.parentNode.insertBefore(node,referNode);
+                    items[0].add(node);
                 }
             }
-            this.present.appendChild(node);
         }
-        
+        if(templateNode)
+        {
+            templateNode.present(items);
+        }
+        return items;
+    }
+    Template.prototype.renderTemplateNode=function(source)
+    {
+        var template=document.createElement("template");
+        for(var i=0;i<this.attr.length;i++)
+        {
+            template.setAttributeNode(this.attr[i].render(source));
+        }
+        template.template=this;
+        template.present=function(items)
+        {
+            if(!(items instanceof Array))
+                items=[items];
+            template.clear();
+            template.items=items;
+            var referNode=template.nextSibling;
+            for(var i=0;i<items.length;i++)
+            {
+                for(var j=0;j<items[i].nodes.length;j++)
+                {
+                    var node=items[i].nodes[j];
+                    template.parentNode.insertBefore(node,referNode);
+                }
+            }
+        }
+        template.addItem=function(item)
+        {
+            var referNode = null;
+            if (template.items && template.items.length > 0)
+            {
+                referNode = template.items[template.items.length - 1].last.nextSibling;
+            }
+            else
+                referNode = template.nextSibling;
+            if (item instanceof TemplateItem)
+                item = [item];
+            for (var i = 0; i < item.length; i++)
+            {
+                for (var j = 0; j < item[i].nodes.length; j++)
+                {
+                    template.parentNode.insertBefore(item[i].nodes[j], referNode);
+                }
+            }
+        }
+        template.insertItem = function (item, index)
+        {
+            var referNode = template.nextSibling;
+            if (template.items && template.items.length>0)
+            {
+                if (index >= template.items.length)
+                    referNode = template.items[template.items.length - 1].last.nextSibling;
+                else
+                    referNode = template.items[index].first;
+            }
+            if (item instanceof TemplateItem)
+                item = [item];
+            for (var i = 0; i < item.length; i++)
+            {
+                for (var j = 0; j < item[i].nodes.length; j++)
+                {
+                    template.parentNode.insertBefore(item[i].nodes[j], referNode);
+                }
+            }
+        }
+        template.removeItem = function (index)
+        {
+            if (template.items[index])
+            {
+                for (var i = 0; i < template.items[index].nodes.length; i++)
+                {
+                    var item = template.items[index].nodes[i];
+                    item.parentNode.removeChild(item);
+                }
+                template.items.removeAt(index);
+            }
+        }
+        template.clear=function()
+        {
+            if(!template.items || !template.parentNode)
+                return;
+            for(var i=0;i<items.length;i++)
+            {
+                for(var j=0;j<items.nodes.length;j++)
+                {
+                    template.parentNode.removeChild(items[i].nodes[j]);
+                }
+            }
+        }
+        return template;
     }
     Template.prototype.toString = function ()
     {
         return "<Template>";
     }
+    
+    function TemplateItem()
+    {
+        this.nodes = ArrayList();
+        Object.defineProperty(this, "first", {
+            get: function ()
+            {
+                return nodes[0];
+            }
+        });
+        Object.defineProperty(this, "last", {
+            get: function ()
+            {
+                return nodes[nodes.length - 1];
+            }
+        })
+    }
+    TemplateItem.prototype.add=function(node)
+    {
+        this.nodes.add(node);
+    }
+
 
     function NodeTemplate(dom)
     {
         this.tag = dom.localName;
-        this.children = [];
-        this.attr = [];
+        this.children = ArrayList();
+        this.attr = ArrayList();
+        this.text=null;
+        
+        if(typeof(dom)=="string")
+        {
+            this.text=new TextTemplate(dom);
+            return;
+        }
         
         for (var i = 0; dom.attributes &&  i < dom.attributes.length; i++)
         {
-            this.attr[this.attr.length] = new AttributeTemplate(dom.attributes[i]);
+            this.attr.add(new AttributeTemplate(dom.attributes[i]));
         }
         for (var i = 0; i < dom.childNodes.length; i++)
         {
             var child = dom.childNodes[i];
             if (child.nodeName == "#text")
             {
-                this.children[this.children.length] = new TextTemplate(child.wholeText);
+                this.children.add(new NodeTemplate(child.wholeText));
             }
             else if (child.nodeName == "TEMPLATE")
             {
-                this.children[this.children.length] = new Template(child);
+                this.children.add(new Template(child));
             }
             else
             {
-                this.children[this.children.length] = new NodeTemplate(child);
+                this.children.add(new NodeTemplate(child));
             }
         }
 
@@ -263,6 +473,10 @@
     }
     NodeTemplate.prototype.render = function (source)
     {
+        if(this.text instanceof TextTemplate)
+        {
+            return document.createTextNode(this.text.render(source));
+        }
         var node = document.createElement(this.tag);
         for (var i = 0; i < this.attr.length; i++)
         {
@@ -272,22 +486,10 @@
         {
             if (this.children[i] instanceof Template)
             {
-                var present = document.createElement("div");
-                for (var j = 0; j < this.children[i].attr.length; j++)
-                {
-                    present.setAttributeNode(this.children[i].attr[j].render(source));
-                }
-                present.className = "HTMLTemplatePresentation";
-                node.appendChild(present);
-                if (!this.children[i].dataSouceBinding)
-                    continue;
+                var template=this.children[i].renderTemplateNode(source);
+                node.appendChild(template);
                 var src = eval("source." + this.children[i].dataSouceBinding);
-                this.children[i].render(present, src);
-            }
-            else if (this.children[i] instanceof TextTemplate)
-            {
-                var textNode = document.createTextNode(this.children[i].render(source));
-                node.appendChild(textNode);
+                this.children[i].render(src,template);
             }
             else
             {

@@ -4,6 +4,7 @@
     <title>HTML Template Test</title>
     <script src="jquery.min.js"></script>
     <script src="../lib/HTMLTemplate.js"></script>
+    <script src="../lib/ObserveList.js"></script>
     <style>
         body{
             background-color: #FAFAFA;
@@ -27,15 +28,35 @@
 <body>
     <template id="templateTest" class="class1 class2">
         <div class="node shadow">
-            233333
             <img class="img" src="{imgUrl}"/>
             <p class="title">{title}</p>
+            <template id="templateTest" class="class1 class2" datasource="{list}">
+                <div class="node shadow">
+                    <img class="img" src="{imgUrl}" />
+                    <p class="title">{title}</p>
+                </div>
+            </template>
         </div>
     </template>
     <script>
         HTMLTemplate.Init();
         var template = document.getElementById("templateTest");
-        template.dataSource = [{ imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }, { imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }, { imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }, { imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }];
+        //template.dataSource = [{ imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }, { imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }, { imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }, { imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }];
+        var list = new ObserveList();
+        for (var i = 0; i < 10; i++)
+        {
+            var item = {
+                imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish",
+                title: i
+            };
+            item.list = new ObserveList();
+            for (var j = 0; j < 2; j++)
+            {
+                item.list.add({ title: "j" + j });
+            }
+            list.add(item);
+        }
+        template.dataSource = list;
     </script>
 </body>
 </html>
