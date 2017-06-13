@@ -3,12 +3,12 @@
     //ArrayList
     function ArrayList()
     {
-        var list = [];
+        var list=[];
         list.add = function (obj)
         {
             list[list.length] = obj;
             return list.length - 1;
-        }
+        };
         list.insert = function (obj, index)
         {
             if (isNaN(index) || index < 0)
@@ -94,6 +94,7 @@
         }
         Event.prototype.add=function(handler)
         {
+            
             this.handlers.add(handler);
         }
         Event.prototype.remove=function(handler)
@@ -128,7 +129,9 @@
             if(!obj.eventManager)
             {
                 obj.eventManager=new EventManager();
+                
             }
+            
             if(obj.eventManager.eventNames.contain(name))
                 throw new Error("Event existed.");
             var event=new Event();
@@ -157,6 +160,7 @@
                 return list.length;
             }
         });
+        
         Event.defineEvent(this,"onRemove");
         Event.defineEvent(this,"onInsert");
         Event.defineEvent(this,"onChange");
@@ -176,7 +180,7 @@
                         item:value,
                         cancle:false
                     };
-                    obsList.onRemove(args);
+                    obsList.onRemove.invoke(args);
                     if(args.cancle)
                         return false;
                     obsList.onChange.invoke(args);
@@ -230,7 +234,7 @@
                 item:obj,
                 cancle:false
             };
-            obsList.onInsert(args);
+            obsList.onInsert.invoke(args);
             if(args.cancle)
                 return false;
             addNode(list.length);

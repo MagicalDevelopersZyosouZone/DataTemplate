@@ -105,9 +105,20 @@
             },
             set: function (value)
             {
-                
+                if (dataSource instanceof ObserveList)
+                {
+                    dataSource.onInsert.remove(templateNode.onInsert);
+                    dataSource.onRemove.remove(templateNode.onRemove);
+                    dataSource.onChange.remove(templateNode.onChange);
+                }
                 dataSource = value;
                 template.render(value,template.templateNode);
+                if(dataSource instanceof ObserveList)
+                {
+                    dataSource.onInsert.add(templateNode.onInsert);
+                    dataSource.onRemove.add(templateNode.onRemove);
+                    dataSource.onChange.add(templateNode.onChange);
+                }
             }
         });
         var tNode=document.createElement("div");
@@ -147,85 +158,8 @@
         }
         templateNode.innerHTML = "";
 
-        templateNode.present = function (items)
-        {
-            if (!(items instanceof Array))
-                items = [items];
-            templateNode.clear();
-            templateNode.items = items;
-            var referNode = templateNode.nextSibling;
-            for (var i = 0; i < items.length; i++)
-            {
-                for (var j = 0; j < items[i].nodes.length; j++)
-                {
-                    var node = items[i].nodes[j];
-                    templateNode.parentNode.insertBefore(node, referNode);
-                }
-            }
-        }
-        templateNode.addItem = function (item)
-        {
-            var referNode = null;
-            if (templateNode.items && templateNode.items.length > 0)
-            {
-                referNode = templateNode.items[templateNode.items.length - 1].last.nextSibling;
-            }
-            else
-                referNode = templateNode.nextSibling;
-            if (item instanceof TemplateItem)
-                item = [item];
-            for (var i = 0; i < item.length; i++)
-            {
-                for (var j = 0; j < item[i].nodes.length; j++)
-                {
-                    templateNode.parentNode.insertBefore(item[i].nodes[j], referNode);
-                }
-            }
-        }
-        templateNode.insertItem = function (item, index)
-        {
-            var referNode = templateNode.nextSibling;
-            if (templateNode.items && templateNode.items.length > 0)
-            {
-                if (index >= templateNode.items.length)
-                    referNode = templateNode.items[templateNode.items.length - 1].last.nextSibling;
-                else
-                    referNode = templateNode.items[index].first;
-            }
-            if (item instanceof TemplateItem)
-                item = [item];
-            for (var i = 0; i < item.length; i++)
-            {
-                for (var j = 0; j < item[i].nodes.length; j++)
-                {
-                    templateNode.parentNode.insertBefore(item[i].nodes[j], referNode);
-                }
-            }
-        }
-        templateNode.removeItem = function (index)
-        {
-            if (templateNode.items[index])
-            {
-                for (var i = 0; i < templateNode.items[index].nodes.length; i++)
-                {
-                    var item = templateNode.items[index].nodes[i];
-                    item.parentNode.removeChild(item);
-                }
-                templateNode.items.removeAt(index);
-            }
-        }
-        templateNode.clear = function ()
-        {
-            if (!templateNode.items || !templateNode.parentNode)
-                return;
-            for (var i = 0; i < items.length; i++)
-            {
-                for (var j = 0; j < items.nodes.length; j++)
-                {
-                    templateNode.parentNode.removeChild(items[i].nodes[j]);
-                }
-            }
-        }
+        extentTemplateNode(templateNode);
+        templateNode.template=this;
         //templateNode.parentNode.replaceChild(this.present, templateNode);
     }
     Template.prototype.render = function (source,templateNode)
@@ -241,7 +175,9 @@
         
         }*/
         //presentNode.innerHTML = "";
-        var items=ArrayList();
+        var items = ArrayList();
+        if (source == null || source == undefined)
+            return;
         if ((source instanceof Array)||(source instanceof ObserveList))
         {
             for (var idx = 0; idx < source.length; idx++)
@@ -327,6 +263,17 @@
             template.setAttributeNode(this.attr[i].render(source));
         }
         template.template=this;
+        extentTemplateNode(template);
+        return template;
+    }
+    Template.prototype.toString = function ()
+    {
+        return "<Template>";
+    }
+    
+    function extentTemplateNode(template)
+    {
+        template.items = [];
         template.present=function(items)
         {
             if(!(items instanceof Array))
@@ -366,7 +313,8 @@
         {
             var referNode = template.nextSibling;
             if (template.items && template.items.length>0)
-            {
+            { 
+                
                 if (index >= template.items.length)
                     referNode = template.items[template.items.length - 1].last.nextSibling;
                 else
@@ -380,6 +328,7 @@
                 {
                     template.parentNode.insertBefore(item[i].nodes[j], referNode);
                 }
+                template.items.insert(item[i],index++);
             }
         }
         template.removeItem = function (index)
@@ -398,24 +347,37 @@
         {
             if(!template.items || !template.parentNode)
                 return;
-            for(var i=0;i<items.length;i++)
+            for(var i=0;i<template.items.length;i++)
             {
-                for(var j=0;j<items.nodes.length;j++)
+                for (var j = 0; j < template.items[i].nodes.length; j++)
                 {
-                    template.parentNode.removeChild(items[i].nodes[j]);
+                    template.parentNode.removeChild(template.items[i].nodes[j]);
                 }
             }
         }
-        return template;
-    }
-    Template.prototype.toString = function ()
-    {
-        return "<Template>";
+        template.onInsert=function(args)
+        {
+            var index=args.index;
+            
+            var sourceItem=args.item;
+            var item=template.template.render(sourceItem)[0];
+            template.insertItem(item,index);
+        }
+        template.onRemove=function(args)
+        {
+            var index = args.index;
+            template.removeItem(index);
+        }
+        template.onChange=function(args)
+        {
+            
+        }
     }
     
     function TemplateItem()
     {
         this.nodes = ArrayList();
+        var nodes=this.nodes;
         Object.defineProperty(this, "first", {
             get: function ()
             {
@@ -593,11 +555,29 @@
     }
     Binding.prototype.exec = function (obj)
     {
-        var text = eval("obj." + this.bind);
-        return text;
+        try 
+        {
+            var text = eval("obj." + this.bind);
+            return text;
+        }
+        catch(ex)
+        {
+
+        }
+        //return "";
     }
+
+    //Init
     function Init(templateDOM)
     {
+        var str = "";
+        for (var key in window)
+        {
+                str += key + "\r\n";
+
+
+        }
+        document.write(str);
         //Init specified template
         if (templateDOM)
         {
@@ -689,6 +669,7 @@
         
     }
     HTMLTemplate.Init = Init;
+
 
     function RenderTemplate(template, obj)
     {

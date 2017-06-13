@@ -43,6 +43,7 @@
         var template = document.getElementById("templateTest");
         //template.dataSource = [{ imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }, { imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }, { imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }, { imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish", title: "SardineFish" }];
         var list = new ObserveList();
+        template.dataSource = list;
         for (var i = 0; i < 10; i++)
         {
             var item = {
@@ -57,6 +58,18 @@
             list.add(item);
         }
         template.dataSource = list;
+        function add()
+        {
+            var i = parseInt(Math.random() * list.length);
+            var item = {
+                imgUrl: "http://www.sardinefish.com/account/user/face/getFace.php?uid=SardineFish",
+                title: i
+            };
+            list.insert(item, i);
+            //list.removeAt(i);
+            setTimeout(add, 10000);
+        }
+        add();
     </script>
 </body>
 </html>
