@@ -490,7 +490,7 @@
         var part = "";
         for (var i = 0; i < text.length; i++)
         {
-            if (text.charAt(i) == "{" && i + 1 < text.length && text.charAt (i+1)!= "+")
+            if (text.charAt(i) == "{" && i + 1 < text.length && text.charAt (i+1)== "{")
             {
                 if (part.length > 0)
                 {
@@ -502,7 +502,7 @@
                 {
                     bindText += text.charAt(i);
 
-                    if (text.charAt(i) == "}" && i - 1 > 0 && text.charAt(i - 1) != "+")
+                    if (text.charAt(i) == "}" && i - 1 > 0 && text.charAt(i - 1) == "}")
                     {
                         break;
                     }
@@ -543,9 +543,9 @@
     {
         this.bind = "";
 
-        if (/\{([_0-9a-zA-Z]+)\}/.test(bindingText))
+        if (/\{\{([_0-9a-zA-Z]+)\}\}/.test(bindingText))
         {
-            this.bind = /\{([_0-9a-zA-Z]+)\}/.exec(bindingText)[1];
+            this.bind = /\{\{([_0-9a-zA-Z]+)\}\}/.exec(bindingText)[1];
         }
         else
         {

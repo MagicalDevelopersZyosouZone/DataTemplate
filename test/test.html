@@ -28,12 +28,12 @@
 <body>
     <template id="templateTest" class="class1 class2">
         <div class="node shadow">
-            <img class="img" src="{imgUrl}"/>
+            <img class="img" src="{{imgUrl}}"/>
             <p class="title">{title}</p>
-            <template id="templateTest" class="class1 class2" datasource="{list}">
+            <template id="templateTest" class="class1 class2" datasource="{{list}}">
                 <div class="node shadow">
-                    <img class="img" src="{imgUrl}" />
-                    <p class="title">{title}</p>
+                    <img class="img" src="{{imgUrl}}" />
+                    <p class="title">{{title}}</p>
                 </div>
             </template>
         </div>
