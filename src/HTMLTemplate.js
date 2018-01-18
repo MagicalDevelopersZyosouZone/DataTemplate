@@ -178,7 +178,10 @@
         this.attr = ArrayList();
         this.children = ArrayList();
         this.dataSouceBinding = null;
-        this.templateNode=templateNode;
+        this.templateNode = templateNode;
+        this.referTemplate = null;
+
+        templateNode.template = this;
 
         var dataSource = null;
 
@@ -220,6 +223,10 @@
             {
                 this.dataSouceBinding = new Binding(templateNode.attributes[i].value).bind;
             }
+            else if (templateNode.attributes[i].name == "template")
+            {
+                this.referTemplate = document.getElementById(templateNode.attributes[i].value).template;
+            }    
             else
             {
                 this.attr.add(new AttributeTemplate(templateNode.attributes[i]));
@@ -228,27 +235,33 @@
         //alert(templateNode.childNodes.length+"\r\n"+templateNode.innerHTML);
         
         
-        for (var i = 0; i < tNode.childNodes.length; i++)
+        if (this.referTemplate)
         {
-            //alert(tNode.childNodes.length);
-            var child = tNode.childNodes[i];
-            if (child.nodeName == "#text")
+            this.children = this.referTemplate.children;
+        }
+        else
+        {
+            for (var i = 0; i < tNode.childNodes.length; i++)
             {
-                this.children.add(new NodeTemplate(child.wholeText));
-            }
-            else if (child.nodeName == "TEMPLATE")
-            {
-                this.children.add(new Template(child));
-            }
-            else
-            {
-                this.children.add(new NodeTemplate(child));
+                //alert(tNode.childNodes.length);
+                var child = tNode.childNodes[i];
+                if (child.nodeName == "#text")
+                {
+                    this.children.add(new NodeTemplate(child.wholeText));
+                }
+                else if (child.nodeName == "TEMPLATE")
+                {
+                    this.children.add(new Template(child));
+                }
+                else
+                {
+                    this.children.add(new NodeTemplate(child));
+                }
             }
         }
         templateNode.innerHTML = "";
 
         extentTemplateNode(templateNode);
-        templateNode.template=this;
         //templateNode.parentNode.replaceChild(this.present, templateNode);
     }
     Template.prototype.render = function (source,templateNode)
@@ -352,7 +365,7 @@
         {
             template.setAttributeNode(this.attr[i].render(source));
         }
-        template.template=this;
+        template.template = this;
         extentTemplateNode(template);
         return template;
     }
@@ -550,7 +563,6 @@
             }
         }
 
-
     }
     NodeTemplate.prototype.render = function (source)
     {
@@ -574,6 +586,16 @@
             }
             else
             {
+                if (this.children[i].text && this.children[i].text.renderAsHTML)
+                {
+                    var div = document.createElement("div");
+                    div.innerHTML = this.children[i].text.render(source);
+                    while (div.childNodes.length>0)
+                    {
+                        node.appendChild(div.childNodes[0]);
+                    }    
+                    continue;
+                }    
                 node.appendChild(this.children[i].render(source));
             }
         }
@@ -604,6 +626,7 @@
     function TextTemplate(text)
     {
         this.raw = text;
+        this.renderAsHTML = false;
         var reg = /\{[^\{\}]*\}/;
         this.combine = [];
         var part = "";
@@ -627,6 +650,8 @@
                     }
                 }
                 var bind = new Binding(bindText);
+                if (bind.render == BindingRender.HTML)
+                    this.renderAsHTML = true;    
                 this.combine[this.combine.length] = bind;
             }
             else
@@ -658,25 +683,41 @@
         return this.raw;
     }
 
+    var BindType = { Member: "member", Element: "element" };
+    var BindingRender = { Text: "text", HTML: "html" };
     function Binding(bindingText)
     {
         this.bind = "";
+        this.type = BindType.Member;
+        this.render = BindingRender.Text;
 
         if (/\{\{([_0-9a-zA-Z\.]+)\}\}/.test(bindingText))
         {
             this.bind = /\{\{([_0-9a-zA-Z\.]+)\}\}/.exec(bindingText)[1];
         }
+        else if (/\{\{\$([_0-9a-zA-Z\.]+)\$\}\}/.test(bindingText))
+        {
+            var value = /\{\{\$([_0-9a-zA-Z\.]+)\$\}\}/.exec(bindingText)[1].toLowerCase();
+            if (value == "element")
+                this.type = BindType.Element;    
+        }    
         else
         {
-            var data = JSON.parse(bindingText);
+            var data = JSON.parse(/\{(\{\S+\})\}/.exec(bindingText)[1]);
             this.bind = data.bind;
+            this.render = data.render || BindingRender.Text;
+            this.type = data.type || BindType.Member;
         }
     }
     Binding.prototype.exec = function (obj)
     {
         try 
         {
-            var text = eval("obj." + this.bind);
+            var text;
+            if (this.type == BindType.Member)
+                text = eval("obj." + this.bind);
+            else if (this.type == BindType.Element)
+                text = obj.toString();    
             return text;
         }
         catch(ex)

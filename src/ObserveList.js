@@ -248,6 +248,13 @@
             }
             list[index]=obj;
         }
+        this.addRange = function (array)
+        {
+            for (var i = 0; i < array.length; i++)
+            {
+                obsList.add(array[i]);
+            }    
+        }    
 
         if (listSrc instanceof Array)
         {
