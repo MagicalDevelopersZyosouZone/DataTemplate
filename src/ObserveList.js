@@ -151,7 +151,11 @@
         return Event;
     })();
     
-    function ObserveList()
+    /**
+     * 
+     * @param {Array} listSrc 
+     */
+    function ObserveList(listSrc)
     {
         var obsList=this;
         var list=[];
@@ -243,6 +247,14 @@
                 list[i]=list[i-1];
             }
             list[index]=obj;
+        }
+
+        if (listSrc instanceof Array)
+        {
+            for (var i = 0; i < listSrc.length; i++)
+            {
+                this.add(listSrc[i]);
+            }
         }
     }
     return ObserveList;
