@@ -690,6 +690,7 @@
         this.bind = "";
         this.type = BindType.Member;
         this.render = BindingRender.Text;
+        this.default = "";
 
         if (/\{\{([_0-9a-zA-Z\.]+)\}\}/.test(bindingText))
         {
@@ -703,22 +704,27 @@
         }    
         else
         {
-            var data = JSON.parse(/\{(\{\S+\})\}/.exec(bindingText)[1]);
+            var data = JSON.parse(/\{(\{.+\})\}/.exec(bindingText)[1]);
             this.bind = data.bind;
             this.render = data.render || BindingRender.Text;
             this.type = data.type || BindType.Member;
+            this.default = data.default || "";
         }
     }
     Binding.prototype.exec = function (obj)
     {
         try 
         {
-            var text;
+            var data;
             if (this.type == BindType.Member)
-                text = eval("obj." + this.bind);
+                data = eval("obj." + this.bind);
             else if (this.type == BindType.Element)
-                text = obj.toString();    
-            return text;
+                data = obj;
+            if (data === null || data === undefined)
+                data = this.default;
+            else
+                data = data.toString();    
+            return data;
         }
         catch(ex)
         {
