@@ -574,6 +574,12 @@
         for (var i = 0; i < this.attr.length; i++)
         {
             node.setAttributeNode(this.attr[i].render(source));
+            if (this.tag === "img" && this.attr[i].name === "data-src")
+            {
+                var attrSrc = document.createAttribute("src");
+                attrSrc.value = this.attr[i].render(source).value;
+                node.setAttributeNode(attrSrc);
+            }
         }
         for (var i = 0; i < this.children.length; i++)
         {
